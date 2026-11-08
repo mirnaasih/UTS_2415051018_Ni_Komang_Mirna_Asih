@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'screens/plant_list_screen.dart'; // Impor screen katalog
 
 void main() {
   runApp(const PlantCatalogApp());
@@ -61,7 +62,13 @@ class HomeScreen extends StatelessWidget {
               const SizedBox(height: 30),
               ElevatedButton.icon(
                 onPressed: () {
-                  // Aksi untuk menuju halaman katalog berikutnya nanti
+                  // Navigasi multi-screen ke PlantListScreen
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const PlantListScreen(),
+                    ),
+                  );
                 },
                 icon: const Icon(Icons.explore),
                 label: const Text('Mulai Jelajahi Tanaman'),
