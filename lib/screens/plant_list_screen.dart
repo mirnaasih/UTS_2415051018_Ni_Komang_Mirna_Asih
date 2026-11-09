@@ -1,87 +1,111 @@
 import 'package:flutter/material.dart';
-import '../models/plant_model.dart';
-import '../widgets/custom_card.dart';
+import '../plant_manager.dart';
+import 'plant_detail_screen.dart';
+import 'add_plant_screen.dart';
 
-class PlantListScreen extends StatelessWidget {
+class PlantListScreen extends StatefulWidget {
   const PlantListScreen({Key? key}) : super(key: key);
 
   @override
+  State<PlantListScreen> createState() => _PlantListScreenState();
+}
+
+class _PlantListScreenState extends State<PlantListScreen> {
+  void _navigateToAddPlant() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const AddPlantScreen()),
+    );
+    if (result == true) {
+      setState(() {}); // Refresh halaman saat kembali dari tambah tanaman
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // Data dummy sementara untuk pengujian layout responsif
-    final List<Plant> dummyPlants = [
-      Plant(
-        id: 1,
-        name: 'Monstera Deliciosa',
-        scientificName: 'Monstera deliciosa',
-        category: 'Indoor',
-        imageUrl: 'https://images.unsplash.com/photo-1614594975525-e45190c55d0b?auto=format&fit=crop&w=500&q=60',
-        description: 'Tanaman hias populer dengan daun berlubang alami.',
-      ),
-      Plant(
-        id: 2,
-        name: 'Lidah Buaya',
-        scientificName: 'Aloe vera',
-        category: 'Outdoor',
-        imageUrl: 'https://images.unsplash.com/photo-1509423350716-97f9360b4e09?auto=format&fit=crop&w=500&q=60',
-        description: 'Tanaman herbal kaya manfaat untuk kulit dan kesehatan.',
-      ),
-      Plant(
-        id: 3,
-        name: 'Sirih Gading',
-        scientificName: 'Epipremnum aureum',
-        category: 'Indoor',
-        imageUrl: 'https://images.unsplash.com/photo-1596727147705-61a532a659bd?auto=format&fit=crop&w=500&q=60',
-        description: 'Tanaman merambat yang sangat mudah dirawat di dalam ruangan.',
-      ),
-      Plant(
-        id: 4,
-        name: 'Kaktus Mini',
-        scientificName: 'Cactaceae',
-        category: 'Succulent',
-        imageUrl: 'https://images.unsplash.com/photo-1459411552884-841db9b3cc2a?auto=format&fit=crop&w=500&q=60',
-        description: 'Tanaman gurun penyimpan air yang tahan di cuaca panas.',
-      ),
-    ];
+    final plantList = PlantManager.plantList; // Ambil data dari PlantManager
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF9F6F0),
       appBar: AppBar(
-        title: const Text('Katalog Tanaman (Responsif)'),
-        backgroundColor: Colors.green[700],
-        foregroundColor: Colors.white,
+        title: const Text(
+          'Katalog Tanaman',
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87),
+        ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.black87),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add_circle_outline_rounded, color: Colors.green, size: 28),
+            onPressed: _navigateToAddPlant,
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
-      // LayoutBuilder digunakan untuk mendeteksi ukuran lebar layar secara dinamis
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          // Jika lebar layar > 600 pixel (misal Tablet/Web), gunakan 3 kolom. Jika HP, gunakan 2 kolom.
-          int crossAxisCount = constraints.maxWidth > 600 ? 3 : 2;
-
-          return Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: GridView.builder(
-              itemCount: dummyPlants.length,
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: crossAxisCount,
-                crossAxisSpacing: 12.0,
-                mainAxisSpacing: 12.0,
-                childAspectRatio: 0.75, // Perbandingan tinggi dan lebar card
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: plantList.isEmpty
+            ? const Center(
+                child: Text(
+                  'Belum ada tanaman di katalog',
+                  style: TextStyle(fontSize: 16, color: Colors.grey),
+                ),
+              )
+            : ListView.builder(
+                itemCount: plantList.length,
+                itemBuilder: (context, index) {
+                  final plant = plantList[index];
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 14),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: ListTile(
+                      contentPadding: const EdgeInsets.all(12),
+                      leading: ClipRRect(
+                        borderRadius: BorderRadius.circular(14),
+                        child: Image.network(
+                          plant.imageUrl,
+                          width: 65,
+                          height: 65,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) =>
+                              const Icon(Icons.broken_image, size: 50, color: Colors.grey),
+                        ),
+                      ),
+                      title: Text(
+                        plant.name,
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      ),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 4),
+                          Text(plant.category, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                          const SizedBox(height: 4),
+                          Text(plant.scientificName, style: const TextStyle(fontSize: 11, color: Colors.green)),
+                        ],
+                      ),
+                      trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: Colors.grey),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => PlantDetailScreen(plant: plant),
+                          ),
+                        );
+                      },
+                    ),
+                  );
+                },
               ),
-              itemBuilder: (context, index) {
-                final plant = dummyPlants[index];
-                return CustomPlantCard(
-                  title: plant.name,
-                  subtitle: plant.scientificName,
-                  imageUrl: plant.imageUrl,
-                  onTap: () {
-                    // Aksi ketika card ditekan
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Memilih: ${plant.name}')),
-                    );
-                  },
-                );
-              },
-            ),
-          );
-        },
+      ),
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.green,
+        onPressed: _navigateToAddPlant,
+        child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }
