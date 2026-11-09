@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import '../plant_manager.dart';
 import '../models/plant_model.dart';
-import '../plant_manager.dart'; // Import PlantManager
 
 class AddPlantScreen extends StatefulWidget {
   const AddPlantScreen({Key? key}) : super(key: key);
@@ -11,11 +11,13 @@ class AddPlantScreen extends StatefulWidget {
 
 class _AddPlantScreenState extends State<AddPlantScreen> {
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _scientificNameController = TextEditingController();
-  final TextEditingController _categoryController = TextEditingController();
-  final TextEditingController _imageUrlController = TextEditingController();
-  final TextEditingController _descriptionController = TextEditingController();
+  final _nameController = TextEditingController();
+  final _scientificNameController = TextEditingController();
+  final _categoryController = TextEditingController();
+  final _imageUrlController = TextEditingController();
+  final _descriptionController = TextEditingController();
+
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -27,31 +29,44 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
     super.dispose();
   }
 
-  void _savePlant() {
+  // Fungsi untuk menyimpan data tanaman ke database Supabase (Tahap 10)
+  void _savePlant() async {
     if (_formKey.currentState!.validate()) {
+      setState(() {
+        _isLoading = true;
+      });
+
       final newPlant = Plant(
-        id: DateTime.now().millisecondsSinceEpoch,
-        name: _nameController.text,
-        scientificName: _scientificNameController.text,
-        category: _categoryController.text,
-        imageUrl: _imageUrlController.text.isEmpty
-            ? 'https://images.unsplash.com/photo-1512428559087-560fa5ceab42'
-            : _imageUrlController.text,
-        description: _descriptionController.text,
+        id: 0, // ID digenerate otomatis oleh Supabase
+        name: _nameController.text.trim(),
+        scientificName: _scientificNameController.text.trim(),
+        category: _categoryController.text.trim(),
+        imageUrl: _imageUrlController.text.trim(),
+        description: _descriptionController.text.trim(),
       );
 
-      // Simpan langsung ke PlantManager secara global
-      PlantManager.addPlant(newPlant);
+      bool success = await PlantManager.addPlant(newPlant);
 
-      // Kembali ke halaman sebelumnya
-      Navigator.pop(context, true);
+      setState(() {
+        _isLoading = false;
+      });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Berhasil menambahkan ${_nameController.text}!'),
-          backgroundColor: Colors.green[700],
-        ),
-      );
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Tanaman berhasil ditambahkan ke database!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.pop(context, true); // Kembali ke halaman sebelumnya dan kirim sinyal refresh
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Gagal menambahkan tanaman. Periksa koneksi!'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -69,59 +84,71 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
         iconTheme: const IconThemeData(color: Colors.black87),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
+        padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text(
-                'Informasi Tanaman',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+              _buildTextField(
+                controller: _nameController,
+                label: 'Nama Tanaman',
+                icon: Icons.local_florist_rounded,
               ),
               const SizedBox(height: 16),
-              TextFormField(
-                controller: _nameController,
-                decoration: _inputDecoration('Nama Tanaman', Icons.eco_outlined),
-                validator: (value) => value == null || value.isEmpty ? 'Nama tanaman tidak boleh kosong' : null,
-              ),
-              const SizedBox(height: 14),
-              TextFormField(
+              _buildTextField(
                 controller: _scientificNameController,
-                decoration: _inputDecoration('Nama Ilmiah (Latin)', Icons.science_outlined),
-                validator: (value) => value == null || value.isEmpty ? 'Nama ilmiah tidak boleh kosong' : null,
+                label: 'Nama Ilmiah',
+                icon: Icons.science_rounded,
               ),
-              const SizedBox(height: 14),
-              TextFormField(
+              const SizedBox(height: 16),
+              _buildTextField(
                 controller: _categoryController,
-                decoration: _inputDecoration('Kategori (cth: Tanaman Indoor)', Icons.category_outlined),
-                validator: (value) => value == null || value.isEmpty ? 'Kategori tidak boleh kosong' : null,
+                label: 'Kategori (cth: Indoor / Outdoor)',
+                icon: Icons.category_rounded,
               ),
-              const SizedBox(height: 14),
-              TextFormField(
+              const SizedBox(height: 16),
+              _buildTextField(
                 controller: _imageUrlController,
-                decoration: _inputDecoration('URL Gambar (Opsional/Unsplash)', Icons.image_outlined),
+                label: 'URL Gambar (Image URL)',
+                icon: Icons.image_rounded,
               ),
-              const SizedBox(height: 14),
-              TextFormField(
+              const SizedBox(height: 16),
+              _buildTextField(
                 controller: _descriptionController,
-                maxLines: 3,
-                decoration: _inputDecoration('Deskripsi Perawatan', Icons.description_outlined),
-                validator: (value) => value == null || value.isEmpty ? 'Deskripsi tidak boleh kosong' : null,
+                label: 'Deskripsi Tanaman',
+                icon: Icons.description_rounded,
+                maxLines: 4,
               ),
               const SizedBox(height: 30),
               SizedBox(
-                width: double.infinity,
+                height: 50,
                 child: ElevatedButton(
-                  onPressed: _savePlant,
+                  onPressed: _isLoading ? null : _savePlant,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                     elevation: 0,
                   ),
-                  child: const Text('Simpan Tanaman', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  child: _isLoading
+                      ? const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.5,
+                          ),
+                        )
+                      : const Text(
+                          'Simpan Tanaman',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
                 ),
               ),
             ],
@@ -131,15 +158,35 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
     );
   }
 
-  InputDecoration _inputDecoration(String label, IconData icon) {
-    return InputDecoration(
-      labelText: label,
-      prefixIcon: Icon(icon, color: Colors.green),
-      filled: true,
-      fillColor: Colors.white,
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
-      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
-      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Colors.green, width: 1.5)),
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    int maxLines = 1,
+  }) {
+    return TextFormField(
+      controller: controller,
+      maxLines: maxLines,
+      validator: (value) {
+        if (value == null || value.trim().isEmpty) {
+          return '$label tidak boleh kosong';
+        }
+        return null;
+      },
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon, color: Colors.green),
+        filled: true,
+        fillColor: Colors.white,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: Colors.green, width: 1.5),
+        ),
+      ),
     );
   }
 }
