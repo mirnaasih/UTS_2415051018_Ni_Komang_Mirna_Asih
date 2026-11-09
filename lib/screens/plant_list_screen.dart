@@ -11,13 +11,24 @@ class PlantListScreen extends StatefulWidget {
 }
 
 class _PlantListScreenState extends State<PlantListScreen> {
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  void _loadData() async {
+    await PlantManager.fetchPlantsFromSupabase();
+    setState(() {}); // Memperbarui UI setelah data berhasil ditarik dari Supabase
+  }
+
   void _navigateToAddPlant() async {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(builder: (context) => const AddPlantScreen()),
     );
     if (result == true) {
-      setState(() {}); // Refresh halaman saat kembali dari tambah tanaman
+      _loadData(); // Refresh ulang data saat kembali dari tambah tanaman
     }
   }
 
@@ -35,13 +46,6 @@ class _PlantListScreenState extends State<PlantListScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.black87),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.add_circle_outline_rounded, color: Colors.green, size: 28),
-            onPressed: _navigateToAddPlant,
-          ),
-          const SizedBox(width: 8),
-        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -101,11 +105,6 @@ class _PlantListScreenState extends State<PlantListScreen> {
                   );
                 },
               ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.green,
-        onPressed: _navigateToAddPlant,
-        child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }

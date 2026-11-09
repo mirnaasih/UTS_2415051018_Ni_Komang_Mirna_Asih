@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'screens/plant_list_screen.dart';
 import 'screens/plant_detail_screen.dart';
 import 'screens/add_plant_screen.dart';
@@ -7,9 +8,18 @@ import 'screens/profile_screen.dart';
 import 'models/plant_model.dart';
 import 'plant_manager.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Inisialisasi Supabase
+  await Supabase.initialize(
+    url: 'https://xmkjwykvrdwhfaigyxvu.supabase.co',
+    anonKey: 'sb_publishable_DS5v6ZJhq65Zk65oj6uSHQ_flL9G-V4',
+  );
+
   runApp(const PlantCatalogApp());
 }
+
 
 class PlantCatalogApp extends StatelessWidget {
   const PlantCatalogApp({Key? key}) : super(key: key);
