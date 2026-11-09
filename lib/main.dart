@@ -1,23 +1,33 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'screens/favorites_screen.dart';
 import 'screens/plant_list_screen.dart';
 import 'screens/plant_detail_screen.dart';
 import 'screens/add_plant_screen.dart';
-import 'screens/favorites_screen.dart';
 import 'screens/profile_screen.dart';
 import 'models/plant_model.dart';
-import 'plant_manager.dart';
+import 'package:provider/provider.dart';
+import 'providers/plant_provider.dart';
+
+
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
+  
   // Inisialisasi Supabase
   await Supabase.initialize(
     url: 'https://xmkjwykvrdwhfaigyxvu.supabase.co',
     anonKey: 'sb_publishable_DS5v6ZJhq65Zk65oj6uSHQ_flL9G-V4',
   );
 
-  runApp(const PlantCatalogApp());
+ runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => PlantProvider()),
+      ],
+      child: const PlantCatalogApp(),
+    ),
+  );
 }
 
 
@@ -57,7 +67,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       case 1:
         return const PlantListScreen();
       case 2:
-        return const FavoritesScreen();
+        return  FavoritesScreen();
       case 3:
         return const ProfileScreen();
       default:
@@ -115,8 +125,8 @@ class HomeDashboardTab extends StatefulWidget {
 class _HomeDashboardTabState extends State<HomeDashboardTab> {
   @override
   Widget build(BuildContext context) {
-    // Ambil daftar tanaman secara dinamis dari PlantManager
-    final plantList = PlantManager.plantList;
+    // Ambil daftar tanaman secara dinamis dari PlantProvider
+   final plantList = Provider.of<PlantProvider>(context).plants;
     final samplePlant = plantList.isNotEmpty ? plantList.first : Plant(
       id: 1,
       name: 'Monstera Deliciosa',
@@ -166,7 +176,7 @@ class _HomeDashboardTabState extends State<HomeDashboardTab> {
                       children: [
                         const Text('Tanaman Anda', style: TextStyle(color: Colors.white70, fontSize: 14)),
                         const SizedBox(height: 6),
-                        // Menampilkan jumlah total tanaman secara dinamis dari PlantManager
+                        // Menampilkan jumlah total tanaman secara dinamis dari PlantProvider
                         Text(
                           '${plantList.length}',
                           style: const TextStyle(color: Colors.white, fontSize: 36, fontWeight: FontWeight.bold),

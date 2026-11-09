@@ -12,7 +12,6 @@ class FavoritesScreen extends StatefulWidget {
 class _FavoritesScreenState extends State<FavoritesScreen> {
   @override
   Widget build(BuildContext context) {
-    // Ambil data langsung dari FavoritesManager
     final favoritePlants = FavoritesManager.favoritePlants;
 
     return Scaffold(
@@ -80,7 +79,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                         icon: const Icon(Icons.favorite_rounded, color: Colors.redAccent, size: 22),
                         onPressed: () {
                           setState(() {
-                            FavoritesManager.toggleFavorite(plant);
+                            FavoritesManager.removeFavorite(plant);
                           });
                         },
                       ),
@@ -91,7 +90,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                             builder: (context) => PlantDetailScreen(plant: plant),
                           ),
                         );
-                        setState(() {}); // Refresh halaman saat kembali dari detail
+                        setState(() {});
                       },
                     ),
                   );

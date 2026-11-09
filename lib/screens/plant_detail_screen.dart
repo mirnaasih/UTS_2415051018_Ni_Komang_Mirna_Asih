@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/plant_model.dart';
-import '../favorites_manager.dart';
+import 'edit_plant_screen.dart';
+import '../favorites_manager.dart'; // Jangan lupa import halaman edit
 
 class PlantDetailScreen extends StatefulWidget {
   final Plant plant;
@@ -12,12 +13,13 @@ class PlantDetailScreen extends StatefulWidget {
 }
 
 class _PlantDetailScreenState extends State<PlantDetailScreen> {
-  late bool isFavorite;
+  bool isFavorite = false; // State lokal untuk tombol favorit
+  late Plant _currentPlant;
 
   @override
   void initState() {
     super.initState();
-    isFavorite = FavoritesManager.isFavorite(widget.plant);
+    _currentPlant = widget.plant;
   }
 
   @override
@@ -33,29 +35,37 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.black87),
         actions: [
+          // Tombol Favorit Interaktif di AppBar
           IconButton(
-            icon: Icon(
-              isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-              color: isFavorite ? Colors.redAccent : Colors.black87,
-            ),
-            onPressed: () {
-              setState(() {
-                FavoritesManager.toggleFavorite(widget.plant);
-                isFavorite = FavoritesManager.isFavorite(widget.plant);
-              });
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    isFavorite
-                        ? '${widget.plant.name} ditambahkan ke Favorit!'
-                        : '${widget.plant.name} dihapus dari Favorit.',
-                  ),
-                  duration: const Duration(seconds: 1),
-                  backgroundColor: Colors.green[700],
-                ),
-              );
-            },
-          ),
+  icon: Icon(
+    isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+    color: isFavorite ? Colors.redAccent : Colors.black87,
+  ),
+  onPressed: () {
+    setState(() {
+      isFavorite = !isFavorite;
+    });
+
+    // TAMBAHKAN PEMANGGILAN INI AGAR TERSIMPAN KE MANAGER FAVORIT
+    if (isFavorite) {
+      FavoritesManager.favoritePlants.add(_currentPlant);
+    } else {
+      FavoritesManager.favoritePlants.removeWhere((p) => p.name == _currentPlant.name);
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          isFavorite
+              ? '${_currentPlant.name} ditambahkan ke Favorit!'
+              : '${_currentPlant.name} dihapus dari Favorit.',
+        ),
+        duration: const Duration(seconds: 1),
+        backgroundColor: Colors.green[700],
+      ),
+    );
+  },
+),
           IconButton(
             icon: const Icon(Icons.more_vert_rounded, color: Colors.black87),
             onPressed: () {},
@@ -67,11 +77,12 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Gambar Utama Tanaman
             Center(
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(24),
                 child: Image.network(
-                  widget.plant.imageUrl,
+                  _currentPlant.imageUrl,
                   height: 280,
                   width: double.infinity,
                   fit: BoxFit.cover,
@@ -79,6 +90,8 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
               ),
             ),
             const SizedBox(height: 20),
+
+            // Nama & Kategori Tanaman
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -87,20 +100,42 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        widget.plant.name,
+                        _currentPlant.name,
                         style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black87),
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        widget.plant.category,
+                        _currentPlant.category,
                         style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                       ),
                     ],
                   ),
                 ),
+                // TOMBOL EDIT YANG DIHUBUNGKAN KE EditPlantScreen
+                IconButton(
+                  onPressed: () async {
+                    final result = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => EditPlantScreen(plant: _currentPlant),
+                      ),
+                    );
+
+                    // Jika data berhasil di-update, perbarui state tampilan
+                    if (result == true) {
+                      setState(() {
+                        // Jika ingin memperbarui data lokal langsung
+                      });
+                      Navigator.pop(context, true); // Kembali ke list dan refresh
+                    }
+                  },
+                  icon: const Icon(Icons.edit_outlined, color: Colors.grey),
+                ),
               ],
             ),
             const SizedBox(height: 20),
+
+            // Kartu Informasi Perawatan (Penyiraman, Cahaya, Suhu, Kelembapan)
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -111,11 +146,14 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
               ],
             ),
             const SizedBox(height: 24),
+
+            // Bagian Pengingat Perawatan
             const Text(
               'Pengingat Perawatan',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
             ),
             const SizedBox(height: 12),
+
             _buildReminderCard(Icons.check_circle, Colors.green, 'Siram Tanaman', 'Setiap 3 Hari'),
             const SizedBox(height: 10),
             _buildReminderCard(Icons.eco, Colors.green, 'Beri Pupuk', 'Setiap 2 Minggu'),

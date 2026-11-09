@@ -1,20 +1,23 @@
 import 'models/plant_model.dart';
 
 class FavoritesManager {
-  // Daftar global untuk menyimpan tanaman yang difavoritkan
+  // List untuk menyimpan tanaman yang difavoritkan
   static final List<Plant> favoritePlants = [];
 
-  // Cek apakah tanaman sudah ada di favorit
-  static bool isFavorite(Plant plant) {
-    return favoritePlants.any((p) => p.id == plant.id);
-  }
-
-  // Tambah atau hapus tanaman dari favorit
-  static void toggleFavorite(Plant plant) {
-    if (isFavorite(plant)) {
-      favoritePlants.removeWhere((p) => p.id == plant.id);
-    } else {
+  // Tambah ke favorit
+  static void addFavorite(Plant plant) {
+    if (!favoritePlants.any((p) => p.name == plant.name)) {
       favoritePlants.add(plant);
     }
+  }
+
+  // Hapus dari favorit
+  static void removeFavorite(Plant plant) {
+    favoritePlants.removeWhere((p) => p.name == plant.name);
+  }
+
+  // Cek apakah tanaman sudah difavoritkan
+  static bool isFavorite(Plant plant) {
+    return favoritePlants.any((p) => p.name == plant.name);
   }
 }

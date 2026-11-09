@@ -1,5 +1,5 @@
 class Plant {
-  final int id;
+  final int? id; // Ubah jadi int? agar aman jika null
   final String name;
   final String scientificName;
   final String category;
@@ -7,7 +7,7 @@ class Plant {
   final String description;
 
   Plant({
-    required this.id,
+    this.id,
     required this.name,
     required this.scientificName,
     required this.category,
@@ -15,24 +15,19 @@ class Plant {
     required this.description,
   });
 
-  factory Plant.fromJson(Map<String, dynamic> json) {
+  factory Plant.fromMap(Map<String, dynamic> map) {
     return Plant(
-      id: json['id'] ?? 0,
-      name: json['common_name'] ?? json['name'] ?? 'Tanaman Tanpa Nama',
-      scientificName: json['scientific_name'] != null 
-          ? (json['scientific_name'] is List 
-              ? json['scientific_name'].join(', ') 
-              : json['scientific_name']) 
-          : 'Nama Ilmiah Tidak Tersedia',
-      category: json['category'] ?? 'Tanaman Hias',
-      imageUrl: json['image_url'] ?? json['default_image']?['regular_url'] ?? 'https://images.unsplash.com/photo-1485955900006-10f4d324d411?auto=format&fit=crop&w=500&q=60',
-      description: json['description'] ?? 'Deskripsi mengenai tanaman ini belum tersedia.',
+      id: map['id'] != null ? map['id'] as int : null, // Aman dari nilai null
+      name: map['name'] ?? '',
+      scientificName: map['scientific_name'] ?? '',
+      category: map['category'] ?? '',
+      imageUrl: map['image_url'] ?? '',
+      description: map['description'] ?? '',
     );
   }
 
-  Map<String, dynamic> toJson() {
+  Map<String, dynamic> toMap() {
     return {
-      'id': id,
       'name': name,
       'scientific_name': scientificName,
       'category': category,

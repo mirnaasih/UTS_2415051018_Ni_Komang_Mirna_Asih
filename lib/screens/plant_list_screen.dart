@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import '../plant_manager.dart';
+import 'package:provider/provider.dart';
+import '../providers/plant_provider.dart';
 import 'plant_detail_screen.dart';
 import 'add_plant_screen.dart';
 
@@ -14,28 +15,13 @@ class _PlantListScreenState extends State<PlantListScreen> {
   @override
   void initState() {
     super.initState();
-    _loadData();
-  }
-
-  void _loadData() async {
-    await PlantManager.fetchPlantsFromSupabase();
-    setState(() {}); // Memperbarui UI setelah data berhasil ditarik dari Supabase
-  }
-
-  void _navigateToAddPlant() async {
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const AddPlantScreen()),
-    );
-    if (result == true) {
-      _loadData(); // Refresh ulang data saat kembali dari tambah tanaman
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<PlantProvider>(context, listen: false).fetchPlants();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final plantList = PlantManager.plantList; // Ambil data dari PlantManager
-
     return Scaffold(
       backgroundColor: const Color(0xFFF9F6F0),
       appBar: AppBar(
@@ -45,66 +31,110 @@ class _PlantListScreenState extends State<PlantListScreen> {
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black87),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh_rounded, color: Colors.black87),
+            onPressed: () {
+              Provider.of<PlantProvider>(context, listen: false).fetchPlants();
+            },
+          ),
+        ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: plantList.isEmpty
-            ? const Center(
-                child: Text(
-                  'Belum ada tanaman di katalog',
-                  style: TextStyle(fontSize: 16, color: Colors.grey),
-                ),
-              )
-            : ListView.builder(
-                itemCount: plantList.length,
-                itemBuilder: (context, index) {
-                  final plant = plantList[index];
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 14),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.all(12),
-                      leading: ClipRRect(
-                        borderRadius: BorderRadius.circular(14),
-                        child: Image.network(
-                          plant.imageUrl,
+      body: Consumer<PlantProvider>(
+        builder: (context, plantProvider, child) {
+          if (plantProvider.isLoading) {
+            return const Center(child: CircularProgressIndicator(color: Colors.green));
+          }
+
+          final plantList = plantProvider.plants;
+
+          if (plantList.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.local_florist_rounded, size: 60, color: Colors.grey[400]),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'Belum ada data tanaman',
+                    style: TextStyle(fontSize: 16, color: Colors.grey, fontWeight: FontWeight.w500),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          return Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: ListView.builder(
+              itemCount: plantList.length,
+              itemBuilder: (context, index) {
+                final plant = plantList[index];
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 14),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.all(12),
+                    leading: ClipRRect(
+                      borderRadius: BorderRadius.circular(14),
+                      child: Image.network(
+                        plant.imageUrl,
+                        width: 65,
+                        height: 65,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => Container(
                           width: 65,
                           height: 65,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) =>
-                              const Icon(Icons.broken_image, size: 50, color: Colors.grey),
+                          color: Colors.grey[200],
+                          child: const Icon(Icons.image_not_supported, color: Colors.grey),
                         ),
                       ),
-                      title: Text(
-                        plant.name,
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                      ),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SizedBox(height: 4),
-                          Text(plant.category, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                          const SizedBox(height: 4),
-                          Text(plant.scientificName, style: const TextStyle(fontSize: 11, color: Colors.green)),
-                        ],
-                      ),
-                      trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: Colors.grey),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => PlantDetailScreen(plant: plant),
-                          ),
-                        );
-                      },
                     ),
-                  );
-                },
-              ),
+                    title: Text(
+                      plant.name,
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 4),
+                        Text(plant.category, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                        const SizedBox(height: 4),
+                        Text(plant.scientificName, style: const TextStyle(fontSize: 11, color: Colors.green)),
+                      ],
+                    ),
+                    trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: Colors.grey),
+                    onTap: () async {
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => PlantDetailScreen(plant: plant),
+                        ),
+                      );
+                      Provider.of<PlantProvider>(context, listen: false).fetchPlants();
+                    },
+                  ),
+                );
+              },
+            ),
+          );
+        },
+      ),
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.green[700],
+        child: const Icon(Icons.add_rounded, color: Colors.white),
+        onPressed: () async {
+          await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const AddPlantScreen(),
+            ),
+          );
+          Provider.of<PlantProvider>(context, listen: false).fetchPlants();
+        },
       ),
     );
   }

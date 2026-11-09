@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import '../plant_manager.dart';
+import 'package:provider/provider.dart';
 import '../models/plant_model.dart';
+import '../providers/plant_provider.dart';
 
 class AddPlantScreen extends StatefulWidget {
   const AddPlantScreen({Key? key}) : super(key: key);
@@ -10,7 +11,10 @@ class AddPlantScreen extends StatefulWidget {
 }
 
 class _AddPlantScreenState extends State<AddPlantScreen> {
+  // 1. Kunci untuk form validasi
   final _formKey = GlobalKey<FormState>();
+
+  // Controller untuk mengambil teks inputan user
   final _nameController = TextEditingController();
   final _scientificNameController = TextEditingController();
   final _categoryController = TextEditingController();
@@ -29,15 +33,14 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
     super.dispose();
   }
 
-  // Fungsi untuk menyimpan data tanaman ke database Supabase (Tahap 10)
-  void _savePlant() async {
+  void _submitData() async {
+    // Jalankan validasi form
     if (_formKey.currentState!.validate()) {
       setState(() {
         _isLoading = true;
       });
 
       final newPlant = Plant(
-        id: 0, // ID digenerate otomatis oleh Supabase
         name: _nameController.text.trim(),
         scientificName: _scientificNameController.text.trim(),
         category: _categoryController.text.trim(),
@@ -45,24 +48,27 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
         description: _descriptionController.text.trim(),
       );
 
-      bool success = await PlantManager.addPlant(newPlant);
+      // Kirim data via PlantProvider
+      bool success = await Provider.of<PlantProvider>(context, listen: false).addPlant(newPlant);
 
       setState(() {
         _isLoading = false;
       });
 
       if (success) {
+        // User Feedback: SnackBar Sukses
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Tanaman berhasil ditambahkan ke database!'),
+            content: Text('Tanaman berhasil ditambahkan!'),
             backgroundColor: Colors.green,
           ),
         );
-        Navigator.pop(context, true); // Kembali ke halaman sebelumnya dan kirim sinyal refresh
+        Navigator.pop(context); // Kembali ke halaman sebelumnya
       } else {
+        // User Feedback: SnackBar Gagal
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Gagal menambahkan tanaman. Periksa koneksi!'),
+            content: Text('Gagal menambahkan tanaman, periksa koneksi!'),
             backgroundColor: Colors.red,
           ),
         );
@@ -75,116 +81,126 @@ class _AddPlantScreenState extends State<AddPlantScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF9F6F0),
       appBar: AppBar(
-        title: const Text(
-          'Tambah Tanaman Baru',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87),
-        ),
+        title: const Text('Tambah Tanaman Baru', style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold)),
         backgroundColor: Colors.transparent,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.black87),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(20.0),
         child: Form(
-          key: _formKey,
+          key: _formKey, // Pasang form key di sini
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _buildTextField(
+              // Input Nama Tanaman dengan Validasi
+              TextFormField(
                 controller: _nameController,
-                label: 'Nama Tanaman',
-                icon: Icons.local_florist_rounded,
-              ),
-              const SizedBox(height: 16),
-              _buildTextField(
-                controller: _scientificNameController,
-                label: 'Nama Ilmiah',
-                icon: Icons.science_rounded,
-              ),
-              const SizedBox(height: 16),
-              _buildTextField(
-                controller: _categoryController,
-                label: 'Kategori (cth: Indoor / Outdoor)',
-                icon: Icons.category_rounded,
-              ),
-              const SizedBox(height: 16),
-              _buildTextField(
-                controller: _imageUrlController,
-                label: 'URL Gambar (Image URL)',
-                icon: Icons.image_rounded,
-              ),
-              const SizedBox(height: 16),
-              _buildTextField(
-                controller: _descriptionController,
-                label: 'Deskripsi Tanaman',
-                icon: Icons.description_rounded,
-                maxLines: 4,
-              ),
-              const SizedBox(height: 30),
-              SizedBox(
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: _isLoading ? null : _savePlant,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    elevation: 0,
-                  ),
-                  child: _isLoading
-                      ? const SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2.5,
-                          ),
-                        )
-                      : const Text(
-                          'Simpan Tanaman',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
+                decoration: InputDecoration(
+                  labelText: 'Nama Tanaman',
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
                 ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Nama tanaman tidak boleh kosong!';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 14),
+
+              // Input Nama Ilmiah dengan Validasi
+              TextFormField(
+                controller: _scientificNameController,
+                decoration: InputDecoration(
+                  labelText: 'Nama Ilmiah',
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Nama ilmiah tidak boleh kosong!';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 14),
+
+              // Input Kategori dengan Validasi
+              TextFormField(
+                controller: _categoryController,
+                decoration: InputDecoration(
+                  labelText: 'Kategori (cth: Indoor / Outdoor)',
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Kategori wajib diisi!';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 14),
+
+              // Input Image URL dengan Validasi
+              TextFormField(
+                controller: _imageUrlController,
+                decoration: InputDecoration(
+                  labelText: 'URL Gambar Tanaman',
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'URL gambar tidak boleh kosong!';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 14),
+
+              // Input Deskripsi dengan Validasi
+              TextFormField(
+                controller: _descriptionController,
+                maxLines: 3,
+                decoration: InputDecoration(
+                  labelText: 'Deskripsi Perawatan',
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Deskripsi wajib diisi!';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 24),
+
+              // Tombol Simpan
+              ElevatedButton(
+                onPressed: _isLoading ? null : _submitData,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green[700],
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+                child: _isLoading
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text(
+                        'Simpan Tanaman',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                      ),
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-    int maxLines = 1,
-  }) {
-    return TextFormField(
-      controller: controller,
-      maxLines: maxLines,
-      validator: (value) {
-        if (value == null || value.trim().isEmpty) {
-          return '$label tidak boleh kosong';
-        }
-        return null;
-      },
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: Icon(icon, color: Colors.green),
-        filled: true,
-        fillColor: Colors.white,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide.none,
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Colors.green, width: 1.5),
         ),
       ),
     );
