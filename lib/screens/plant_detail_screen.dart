@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../models/plant_model.dart';
 import 'edit_plant_screen.dart';
-import '../favorites_manager.dart'; // Jangan lupa import halaman edit
+import '../favorites_manager.dart'; 
+import 'package:provider/provider.dart';
+import '../providers/plant_provider.dart';
 
 class PlantDetailScreen extends StatefulWidget {
   final Plant plant;
@@ -90,6 +92,39 @@ class _PlantDetailScreenState extends State<PlantDetailScreen> {
               ),
             ),
             const SizedBox(height: 20),
+
+          IconButton(
+  icon: const Icon(Icons.delete_rounded, color: Colors.red),
+  onPressed: () {
+    // Dialog Konfirmasi sebelum Hapus (User Interaction & Feedback)
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Hapus Tanaman'),
+        content: const Text('Apakah kamu yakin ingin menghapus tanaman ini dari katalog?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Batal'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(ctx); // Tutup dialog
+             bool success = await Provider.of<PlantProvider>(context, listen: false).deletePlant(widget.plant.name);
+              if (success) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Tanaman berhasil dihapus!'), backgroundColor: Colors.red),
+                );
+                Navigator.pop(context); // Kembali ke halaman sebelumnya
+              }
+            },
+            child: const Text('Hapus', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  },
+),
 
             // Nama & Kategori Tanaman
             Row(

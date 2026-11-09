@@ -43,4 +43,11 @@ class PlantProvider with ChangeNotifier {
     }
     return success;
   }
+  Future<bool> deletePlant(String plantName) async {
+  bool success = await PlantRepository.deletePlant(plantName);
+  if (success) {
+    await fetchPlants(); // Refresh data otomatis setelah terhapus
+  }
+  return success;
+}
 }

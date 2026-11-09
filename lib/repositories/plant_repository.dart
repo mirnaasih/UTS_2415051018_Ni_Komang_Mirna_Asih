@@ -36,4 +36,13 @@ class PlantRepository {
       return false;
     }
   }
+  static Future<bool> deletePlant(String plantName) async {
+  try {
+    await SupabaseService.deletePlantData(plantName);
+    return true;
+  } catch (e) {
+    print('Error in PlantRepository.deletePlant: $e');
+    return false;
+  }
+}
 }

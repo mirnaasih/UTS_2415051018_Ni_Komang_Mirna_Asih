@@ -15,4 +15,7 @@ class SupabaseService {
   static Future<void> updatePlantData(String oldName, Map data) async {
     await _supabase.from('plants').update(data).eq('name', oldName);
   }
+  static Future<void> deletePlantData(String plantName) async {
+  await _supabase.from('plants').delete().eq('name', plantName);
+}
 }
